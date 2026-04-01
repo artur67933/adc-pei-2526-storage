@@ -3,10 +3,15 @@ package pt.unl.fct.di.adc.firstwebapp.util;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.codec.digest.DigestUtils;
+
 import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.DatastoreOptions;
 import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.Key;
+import com.google.cloud.datastore.KeyFactory;
+import com.google.cloud.datastore.Query;
+import com.google.cloud.datastore.QueryResults;
 import com.google.cloud.datastore.Transaction;
 import com.google.gson.Gson;
 
@@ -41,17 +46,17 @@ public class Metodos {
 		return tojson(map);
 	}
 
-	private static Response edituser(String username, String pwd, String phone, String address, Roles role) {
+	private static Response edituser(String username, String pwd, String phone, String address, String role) {
 		Transaction txn = datastore.newTransaction();
 		Key userKey = datastore.newKeyFactory().setKind("User").newKey(username);
 		Entity user = txn.get(userKey), newuser;
 		if (user == null)
 			return Metodos.error(Mystatus.USER_NOT_FOUND);
 		newuser = Entity.newBuilder(userKey).set("user_name", username)
-				.set("user_pwd", (pwd != null) ? pwd : user.getString("user_pwd"))
+				.set("user_pwd", (pwd != null) ? DigestUtils.sha512Hex(pwd) : user.getString("user_pwd"))
 				.set("user_phone", (phone != null) ? phone : user.getString("user_phone"))
 				.set("user_address", (address != null) ? address : user.getString("user_address"))
-				.set("user_role", (role != null) ? role.toString() : user.getString("user_role")).build();
+				.set("user_role", (role != null) ? role : user.getString("user_role")).build();
 		txn.put(newuser);
 		txn.commit();
 		user = txn.get(userKey);
@@ -74,7 +79,7 @@ public class Metodos {
 		return edituser(username, null, phone, address, null);
 	}
 
-	public static Response edituserrole(String username, Roles role) {
+	public static Response edituserrole(String username, String role) {
 		return edituser(username, null, null, null, role);
 	}
 
@@ -124,6 +129,16 @@ public class Metodos {
 		return success(map);
 	}
 	
+	public static void deletetokens(String username) {
+		Query<Entity> query = Query.newEntityQueryBuilder().setKind("Token").build();
+		QueryResults<Entity> results = datastore.run(query);
+		KeyFactory tokenKeys = datastore.newKeyFactory().setKind("Token");
+		while (results.hasNext()) {
+			Entity en=results.next();
+			if(en.getString("token_name").equals(username)) 
+				datastore.delete(tokenKeys.newKey(en.getString("token_ID")));
+		}
+	}
 
 
 }

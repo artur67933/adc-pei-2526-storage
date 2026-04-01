@@ -25,44 +25,42 @@ public class RegisterResource {
 
 	private static final Datastore datastore = DatastoreOptions.getDefaultInstance().getService();
 
-	public static class InputData {
-		public RegisterData input;
-	}
+	public static class InputData {public RegisterData input;}
 
-	public RegisterResource() {
-	} // Default constructor, nothing to do
+	public RegisterResource() {} // Default constructor, nothing to do
 
 	@POST
 	@Path("/")
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response registerUser(InputData input) {
-		if (input == null)
+	public Response registerUser(Object input) {
+		if(input==null)
 			return Metodos.error(Mystatus.INVALID_INPUT);
-		RegisterData data=input.input;
+		try {
+			@SuppressWarnings("unchecked")
+			RegisterData data=new RegisterData((Map<String, Object>)((Map<String, Object>) input).get("input"));
+			if(!data.validRegistration()) 
+				return Metodos.error(Mystatus.INVALID_CREDENTIALS); 
+			Transaction txn = datastore.newTransaction(); 
+			Key userKey = datastore.newKeyFactory().setKind("User").newKey(data.username); 
+			Entity user= txn.get(userKey);
 
-		if(!data.validRegistration()) return
-				Metodos.error(Mystatus.INVALID_CREDENTIALS); 
-		Transaction txn = datastore.newTransaction(); 
-		Key userKey = datastore.newKeyFactory().setKind("User").newKey(data.username); 
-		Entity user= txn.get(userKey);
-
-		if(user != null) 
-			return Metodos.error(Mystatus.USER_ALREADY_EXISTS); 
-		else {
-			user = Entity.newBuilder(userKey) 
-					.set("user_name", data.username)
-					.set("user_pwd", DigestUtils.sha512Hex(data.password))
-					.set("user_phone",data.phone) 
-					.set("user_address", data.address) 
-					.set("user_role",data.role.toString()) 
-					.build(); 
-			txn.put(user); 
-			txn.commit();
-			Map<String,Object> map = new HashMap<String, Object>(); 
-			map.put("username", data.username);
-			map.put("role", data.role.toString()); 
-			return Metodos.success(map); 
-		}
-
+			if(user != null) 
+				return Metodos.error(Mystatus.USER_ALREADY_EXISTS); 
+			else {
+				user = Entity.newBuilder(userKey) 
+						.set("user_name", data.username)
+						.set("user_pwd", DigestUtils.sha512Hex(data.password))
+						.set("user_phone",data.phone) 
+						.set("user_address", data.address) 
+						.set("user_role",data.role.toString()) 
+						.build(); 
+				txn.put(user); 
+				txn.commit();
+				Map<String,Object> map = new HashMap<String, Object>(); 
+				map.put("username", data.username);
+				map.put("role", data.role.toString()); 
+				return Metodos.success(map); 
+			}
+		}catch(Exception e) {return Metodos.error(Mystatus.INVALID_INPUT);}
 	}
 }

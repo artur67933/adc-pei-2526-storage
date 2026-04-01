@@ -11,8 +11,8 @@ public class AuthToken {
 	public String username;
 	public String tokenId;
 	public String role;
-	public Long issuedAt;
-	public Long expiresAt;
+	public Integer issuedAt;
+	public Integer expiresAt;
 	
 	public AuthToken() { }
 	
@@ -20,11 +20,19 @@ public class AuthToken {
 		this.username = username;
 		this.tokenId = UUID.randomUUID().toString();
 		this.role = role;
-		this.issuedAt = System.currentTimeMillis()/1000;
-		this.expiresAt = this.issuedAt + (EXPIRATION_TIME/1000);
+		this.issuedAt = (int) (System.currentTimeMillis()/1000);
+		this.expiresAt = (int) (this.issuedAt + (EXPIRATION_TIME/1000));
 	}
 	
-	public AuthToken(String username,String tokenId,String role,long issuedAt,long expiresAt) {
+	public AuthToken(Map<String, Object> map) {
+		this.username = (String)map.get("username");
+		this.tokenId = (String)map.get("tokenId");
+		this.issuedAt = (Integer)map.get("issuedAt");
+		this.expiresAt = (Integer)map.get("expiresAt");
+		this.role = (String)map.get("role");
+	}
+	
+	public AuthToken(String username,String tokenId,String role,int issuedAt,int expiresAt) {
 		this.username = username;
 		this.tokenId = tokenId;
 		this.role= role;

@@ -1,5 +1,7 @@
 package pt.unl.fct.di.adc.firstwebapp.util;
 
+import java.util.Map;
+
 public class RegisterData {
 	
 	public String username;
@@ -22,6 +24,15 @@ public class RegisterData {
 		this.role = role;
 	}
 	
+	public RegisterData(Map<String, Object> map) {
+		this.username = (String)map.get("username");
+		this.password = (String)map.get("password");
+		this.confirmation = (String)map.get("confirmation");
+		this.phone = (String)map.get("phone");
+		this.address = (String)map.get("address");
+		this.role = (String)map.get("role");
+	}
+
 	private boolean nonEmptyOrBlankField(String field) {
 		return field != null && !field.isBlank();
 	}
@@ -39,12 +50,19 @@ public class RegisterData {
 	}
 	
 	public boolean validphone() {
-		try {
-			Integer.parseInt(phone);
-		}catch(NumberFormatException e){
-			return false;
-		}
+		int n=0;
+		if(phone.charAt(n)=='+')n++;
+		for(;n<phone.length();n++)
+			switch(phone.charAt(n)) {
+			case '0':case '1':case '2':
+			case '3':case '4':case '5':
+			case '6':case '7':case '8':
+			case '9':break;
+			default:return false;
+			}
 		return true;
 	}
+	
+
 	
 }
